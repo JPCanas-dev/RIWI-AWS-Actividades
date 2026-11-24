@@ -1,0 +1,239 @@
+PARTE 1: CREAR
+
+Paso 1:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws s3 mb s3://practica-juan-1125
+make_bucket: practica-juan-1125
+
+Paso 2:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws s3 ls
+2026-11-23 19:14:10 practica-juan-1125
+
+Bucket no tiene contenido (no se muestra resultado en pantalla):
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws s3 ls s3://practica-juan-1125
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3>
+
+Paso 3:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws s3api get-bucket-location --bucket practica-juan-1125
+{                                                                                                                                                                                                
+    "LocationConstraint": "us-east-2"
+}
+
+PARTE 2: SUBIR
+
+Paso 4: Crear tres archivos de texto: notas.txt, tareas.txt y secreto.txt, cada uno con una línea de contenido.
+
+Paso 5:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws s3 cp notas.txt s3://practica-juan-1125
+upload: .\notas.txt to s3://practica-juan-1125/notas.txt
+
+Paso 6:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3> aws s3 sync practica-s3/ s3://practica-juan-1125 --exclude "evidencia-raw.txt" 
+upload: practica-s3\tareas.txt to s3://practica-juan-1125/tareas.txt
+upload: practica-s3\secreto.txt to s3://practica-juan-1125/secreto.txt
+
+Paso 7:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3> aws s3 ls s3://practica-juan-1125 --recursive --human-readable --summarize
+2026-11-23 19:40:35   18 Bytes notas.txt
+2026-11-23 19:45:33   20 Bytes secreto.txt
+2026-11-23 19:45:33   19 Bytes tareas.txt
+
+Total Objects: 3
+   Total Size: 57 Bytes
+
+PARTE 3: CONSULTAR Y DESCARGAR
+
+Paso 8:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3> aws s3 cp s3://practica-juan-1125/notas.txt -  
+contenido de notas
+
+Paso 9:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3> aws s3api head-object --bucket practica-juan-1125 --key tareas.txt 
+{                                                                                                                                                                                                
+    "AcceptRanges": "bytes",
+    "LastModified": "2026-11-24T00:45:33+00:00",
+    "ContentLength": 19,
+    "ETag": "\"9b487bfbb5a773aff22a91b86705bd10\"",
+    "ContentType": "text/plain",
+    "ServerSideEncryption": "AES256",
+    "Metadata": {}
+}
+
+Paso 10:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3\descargas> aws s3 cp s3://practica-juan-1125/secreto.txt .
+download: s3://practica-juan-1125/secreto.txt to .\secreto.txt
+
+PARTE 4: EDITAR
+
+Paso 11:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3\descargas> aws s3 mv s3://practica-juan-1125/tareas.txt s3://practica-juan-1125/pendientes.txt
+move: s3://practica-juan-1125/tareas.txt to s3://practica-juan-1125/pendientes.txt
+
+Paso 12:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws s3 cp notas.txt s3://practica-juan-1125/
+upload: .\notas.txt to s3://practica-juan-1125/notas.txt
+
+Paso 13:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws s3 cp s3://practica-juan-1125/notas.txt -  
+contenido de notas versión 2 para paso 12
+
+PARTE 5: COMPARTIR SIN HACERLO PÚBLICO
+
+Paso 14:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws s3 presign s3://practica-juan-1125/notas.txt --expires-in 60  
+https://practica-juan-1125.s3.us-east-2.amazonaws.com/notas.txt?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAULLIDC6XD67QPCEZ%2F20261124%2Fus-east-2%2Fs3%2Faws4_request&X-Amz-Date=20261124T012106Z&X-Amz-Expires=60&X-Amz-SignedHeaders=host&X-Amz-Signature=5f8c8490f7f80a2c182d2e141bccbc775ff055cfd442000afb094b3965bf44d9
+
+Paso 15: 
+
+Imagen P15-enlace-habilitado
+Imagen P16-enlace-expirado
+
+PARTE 6: MENOR PRIVILEGIO
+
+Paso 17:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws iam create-user --user-name lector-s3-juan
+{                                                                                                                                 
+    "User": {
+        "Path": "/",
+        "UserName": "lector-s3-juan",
+        "UserId": "AIDAULLIDC6XBYNZ5PGRQ",
+        "Arn": "arn:aws:iam::299255404462:user/lector-s3-juan",
+        "CreateDate": "2026-11-24T15:58:57+00:00"                                                                                 
+    }                                                                                                                             
+}
+
+Paso 18: Crear un archivo solo-lectura.json con esta política, usando el nombre de tu bucket:
+
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject"
+      ],
+      "Resource": "arn:aws:s3:::practica-juan-1125/*"
+    }
+  ]
+}
+
+Paso 19:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws iam put-user-policy --user-name lector-s3-juan --policy-name leer-objetos --policy-document file://solo-lectura.json
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws iam list-user-policies --user-name lector-s3-juan
+{                                                                                                                                 
+    "PolicyNames": [
+        "leer-objetos"
+    ]
+}
+
+Paso 20:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws iam create-access-key --user-name lector-s3-juan
+
+{                                                                                                                                 
+    "AccessKey": {
+        "UserName": "lector-s3-juan",
+        "AccessKeyId": "****************",
+        "Status": "Active",
+        "SecretAccessKey": "***************",
+        "CreateDate": "2026-11-24T16:32:03+00:00"
+    }
+}
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws configure --profile lector-s3
+
+Tip: You can deliver temporary credentials to the AWS CLI using your AWS Console session by running the command 'aws login'.
+
+AWS Access Key ID [None]: *******************
+AWS Secret Access Key [None]: *******************
+Default region name [None]: us-east-2
+Default output format [None]: json
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws sts get-caller-identity --profile lector-s3
+{                                                                                                                                                                                                   
+    "UserId": "AIDAULLIDC6XBYNZ5PGRQ",
+    "Account": "299255404462",
+    "Arn": "arn:aws:iam::299255404462:user/lector-s3-juan"
+}
+
+Paso 21:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws s3 cp s3://practica-juan-1125/notas.txt - --profile lector-s3
+contenido de notas versión 2 para paso 12
+
+Paso 22:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws s3 ls s3://practica-juan-1125/ --profile lector-s3
+
+aws: [ERROR]: An error occurred (AccessDenied) when calling the ListObjectsV2 operation: User: arn:aws:iam::299255404462:user/lector-s3-juan is not authorized to perform: s3:ListBucket on resource: "arn:aws:s3:::practica-juan-1125" because no identity-based policy allows the s3:ListBucket action
+
+Paso 23:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws s3 rm s3://practica-juan-1125/secreto.txt --profile lector-s3
+delete failed: s3://practica-juan-1125/secreto.txt An error occurred (AccessDenied) when calling the DeleteObject operation: User: arn:aws:iam::299255404462:user/lector-s3-juan is not authorized to perform: s3:DeleteObject on resource: "arn:aws:s3:::practica-juan-1125/secreto.txt" because no identity-based policy allows the s3:DeleteObject action
+
+PARTE 7: ELIMINAR
+
+Paso 24:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws s3 rb s3://practica-juan-1125 
+remove_bucket failed: s3://practica-juan-1125 An error occurred (BucketNotEmpty) when calling the DeleteBucket operation: The bucket you tried to delete is not empty
+
+Paso 25:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws s3 rm s3://practica-juan-1125/ --recursive
+delete: s3://practica-juan-1125/notas.txt
+delete: s3://practica-juan-1125/pendientes.txt
+delete: s3://practica-juan-1125/secreto.txt
+
+Paso 26:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws s3 rb s3://practica-juan-1125             
+remove_bucket: practica-juan-1125
+
+Paso 27:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws iam list-access-keys --user-name lector-s3-juan                                                                   
+{                                                                                                                                                                                                   
+    "AccessKeyMetadata": [
+        {
+            "UserName": "lector-s3-juan",
+            "AccessKeyId": "*******************",
+            "Status": "Active",
+            "CreateDate": "2026-11-24T16:32:03+00:00"
+        }
+    ]
+}
+
+Paso 28:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> notepad "$HOME\.aws\credentials"
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> notepad "$HOME\.aws\config"
+
+Paso 29:
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws s3 ls                                                   
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws iam list-users --query "Users[].UserName" --output table
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\03-AWS-bucket-s3\practica-s3> aws iam list-users --query "Users[].UserName" --output table
+------------------                                                                                                                                                                                           
+|    ListUsers   |
++----------------+
+|  admin-juan-1  |
++----------------+
+
