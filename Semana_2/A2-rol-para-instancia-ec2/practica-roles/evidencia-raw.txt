@@ -1,0 +1,273 @@
+PARTE 1: Preparar el recurso a proteger
+
+Paso 1: Crea un bucket llamado reportes-juan-1125.
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\04-ROLES-IAM> aws s3 mb s3://reportes-juan-1125
+make_bucket: reportes-juan-1125
+
+Paso 2: Crea un archivo reporte.txt con una línea de contenido y súbelo al bucket (en este caso se creó como reportes.txt).
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\04-ROLES-IAM\practica-roles> aws s3 cp reportes.txt s3://reportes-juan-1125/
+upload: .\reportes.txt to s3://reportes-juan-1125/reportes.txt 
+
+Paso 3: Lista el contenido del bucket y confirma que aparece.
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\04-ROLES-IAM\practica-roles> aws s3 ls
+2026-11-25 11:41:46 reportes-juan-1125
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\04-ROLES-IAM\practica-roles> aws s3 ls s3://reportes-juan-1125/
+2026-11-25 11:44:25         28 reportes.txt
+
+
+PARTE 2: ESCRIBIR LAS DOS POLÍTICAS
+
+Paso 4: Crea el archivo confianza.json con una política que permita asumir el rol solo al servicio EC2.
+
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": { "Service": "ec2.amazonaws.com" },
+    "Action": "sts:AssumeRole"
+  }]
+}
+
+Paso 5: Crea el archivo permisos.json con una política que permita solo leer objetos de tu bucket.
+
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": ["s3:GetObject"],
+    "Resource": "arn:aws:s3:::reportes-juan-1125/*"
+  }]
+}
+
+Paso 6: Comprueba que los dos archivos son JSON válido.
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\04-ROLES-IAM\practica-roles> Get-Content confianza.json -Raw | ConvertFrom-Json
+
+Version    Statement                                           
+-------    ---------                                           
+2012-10-17 {@{Effect=Allow; Principal=; Action=sts:AssumeRole}}
+
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\04-ROLES-IAM\practica-roles> Get-Content permisos.json -Raw | ConvertFrom-Json
+
+Version    Statement                                                                            
+-------    ---------                                                                            
+2012-10-17 {@{Effect=Allow; Action=System.Object[]; Resource=arn:aws:s3:::reportes-juan-1125/*}}
+
+
+PARTE 3: CREAR EL ROL
+
+Paso 7: Intenta crear el rol ec2-lector-s3 sin indicar la política de confianza y lee el error.
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\04-ROLES-IAM\practica-roles> aws iam create-role --role-name ec2-lector-s3                                            
+
+aws: [ERROR]: An error occurred (ParamValidation): the following arguments are required: --assume-role-policy-document
+
+Paso 8: Ahora créalo correctamente, con confianza.json.
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\04-ROLES-IAM\practica-roles> aws iam create-role --role-name ec2-lector-s3 --assume-role-policy-document file://confianza.json
+{                                                                                                                                                                                                            
+    "Role": {
+        "Path": "/",
+        "RoleName": "ec2-lector-s3",
+        "RoleId": "AROAULLIDC6XHC7RP7X4X",
+        "Arn": "arn:aws:iam::299255404462:role/ec2-lector-s3",
+        "CreateDate": "2026-11-25T19:12:44+00:00",
+        "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {                                                                                                                                                                           
+                        "Service": "ec2.amazonaws.com"                                                                                                                                                       
+                    },                                                                                                                                                                                       
+                    "Action": "sts:AssumeRole"                                                                                                                                                               
+                }                                                                                                                                                                                            
+            ]                                                                                                                                                                                                
+        }                                                                                                                                                                                                    
+    }                                                                                                                                                                                                        
+}    
+
+Paso 9: Muestra los datos del rol y anota su Arn.
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\04-ROLES-IAM\practica-roles> aws iam get-role --role-name ec2-lector-s3
+{                                                                                                                                                                                                            
+    "Role": {
+        "Path": "/",
+        "RoleName": "ec2-lector-s3",
+        "RoleId": "AROAULLIDC6XHC7RP7X4X",
+        "Arn": "arn:aws:iam::299255404462:role/ec2-lector-s3",
+        "CreateDate": "2026-11-25T19:12:44+00:00",
+        "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {                                                                                                                                                                           
+                        "Service": "ec2.amazonaws.com"                                                                                                                                                       
+                    },                                                                                                                                                                                       
+                    "Action": "sts:AssumeRole"                                                                                                                                                               
+                }                                                                                                                                                                                            
+            ]                                                                                                                                                                                                
+        },                                                                                                                                                                                                   
+        "MaxSessionDuration": 3600,                                                                                                                                                                          
+        "MaxSigninSessionDuration": 3600,                                                                                                                                                                    
+        "RoleLastUsed": {}                                                                                                                                                                                   
+    }                                                                                                                                                                                                        
+}
+
+Paso 10: Lista las políticas en línea del rol.
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\04-ROLES-IAM\practica-roles> aws iam list-role-policies --role-name ec2-lector-s3
+{                                                                                                                                                                                                            
+    "PolicyNames": []
+}
+
+
+PARTE 4: DAR PERMISOS
+
+Paso 11: Agrégale al rol una política en línea llamada leer-reportes usando permisos.json.
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\04-ROLES-IAM\practica-roles> aws iam put-role-policy --role-name ec2-lector-s3 --policy-name leer-reportes --policy-document file://permisos.json
+
+Paso 12: Lista de nuevo las políticas en línea y confirma que aparece.
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\04-ROLES-IAM\practica-roles> aws iam list-role-policies --role-name ec2-lector-s3                                                                
+{                                                                                                                                                                                                            
+    "PolicyNames": [
+        "leer-reportes"
+    ]
+}
+
+Paso 13: Muestra el contenido de la política leer-reportes desde AWS.
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\04-ROLES-IAM\practica-roles> aws iam get-role-policy --role-name ec2-lector-s3 --policy-name leer-reportes
+{                                                                                                                                                                                                            
+    "RoleName": "ec2-lector-s3",
+    "PolicyName": "leer-reportes",
+    "PolicyDocument": {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "s3:GetObject"
+                ],
+                "Resource": "arn:aws:s3:::reportes-juan-1125/*"
+            }                                                                                                                                                                                                
+        ]                                                                                                                                                                                                    
+    }                                                                                                                                                                                                        
+}
+
+
+PARTE 5: EDITAR
+
+Paso 14: Agrégale al rol una descripción: Rol para que EC2 lea reportes.
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\04-ROLES-IAM\practica-roles> aws iam update-role --role-name ec2-lector-s3 --description "Rol para que EC2 lea reportes"
+
+Paso 15: Agrégale una etiqueta con clave semana y valor 1.
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\04-ROLES-IAM\practica-roles> aws iam tag-role --role-name ec2-lector-s3 --tags Key=semana,Value=1 
+
+Paso 16: Muestra los datos del rol y sus etiquetas para verificar los cambios.
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\04-ROLES-IAM\practica-roles> aws iam get-role --role-name ec2-lector-s3
+{                                                                                                                                                                                                       
+    "Role": {
+        "Path": "/",
+        "RoleName": "ec2-lector-s3",
+        "RoleId": "AROAULLIDC6XHC7RP7X4X",
+        "Arn": "arn:aws:iam::299255404462:role/ec2-lector-s3",
+        "CreateDate": "2026-11-25T19:12:44+00:00",
+        "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {                                                                                                                                                                      
+                        "Service": "ec2.amazonaws.com"                                                                                                                                                  
+                    },                                                                                                                                                                                  
+                    "Action": "sts:AssumeRole"                                                                                                                                                          
+                }                                                                                                                                                                                       
+            ]                                                                                                                                                                                           
+        },                                                                                                                                                                                              
+        "Description": "Rol para que EC2 lea reportes",                                                                                                                                                 
+        "MaxSessionDuration": 3600,                                                                                                                                                                     
+        "MaxSigninSessionDuration": 3600,                                                                                                                                                               
+        "Tags": [                                                                                                                                                                                       
+            {                                                                                                                                                                                           
+                "Key": "semana",                                                                                                                                                                        
+                "Value": "1"                                                                                                                                                                            
+            }                                                                                                                                                                                           
+        ],                                                                                                                                                                                              
+        "RoleLastUsed": {}                                                                                                                                                                              
+    }                                                                                                                                                                                                   
+}
+
+PARTE 6: PERFIL DE INSTANCIA
+
+Paso 17: Crea un perfil de instancia llamado ec2-lector-s3.
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\04-ROLES-IAM\practica-roles> aws iam create-instance-profile --instance-profile-name ec2-lector-s3
+{                                                                                                                                                                                                       
+    "InstanceProfile": {
+        "Path": "/",
+        "InstanceProfileName": "ec2-lector-s3",
+        "InstanceProfileId": "AIPAULLIDC6XJ6C3HMF32",
+        "Arn": "arn:aws:iam::299255404462:instance-profile/ec2-lector-s3",
+        "CreateDate": "2026-11-25T20:12:06+00:00",
+        "Roles": []
+    }
+}
+
+Paso 18: Mete el rol dentro del perfil.
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\04-ROLES-IAM\practica-roles> aws iam add-role-to-instance-profile --instance-profile-name ec2-lector-s3 --role-name ec2-lector-s3
+
+Paso 19: Muestra el perfil y confirma que contiene el rol.
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\04-ROLES-IAM\practica-roles> aws iam get-instance-profile --instance-profile-name ec2-lector-s3
+{                                                                                                                                                                                                       
+    "InstanceProfile": {
+        "Path": "/",
+        "InstanceProfileName": "ec2-lector-s3",
+        "InstanceProfileId": "AIPAULLIDC6XJ6C3HMF32",
+        "Arn": "arn:aws:iam::299255404462:instance-profile/ec2-lector-s3",
+        "CreateDate": "2026-11-25T20:12:06+00:00",
+        "Roles": [
+            {
+                "Path": "/",
+                "RoleName": "ec2-lector-s3",
+                "RoleId": "AROAULLIDC6XHC7RP7X4X",
+                "Arn": "arn:aws:iam::299255404462:role/ec2-lector-s3",                                                                                                                                  
+                "CreateDate": "2026-11-25T19:12:44+00:00",                                                                                                                                              
+                "AssumeRolePolicyDocument": {                                                                                                                                                           
+                    "Version": "2012-10-17",                                                                                                                                                            
+                    "Statement": [                                                                                                                                                                      
+                        {                                                                                                                                                                               
+                            "Effect": "Allow",                                                                                                                                                          
+                            "Principal": {                                                                                                                                                              
+                                "Service": "ec2.amazonaws.com"                                                                                                                                          
+                            },                                                                                                                                                                          
+                            "Action": "sts:AssumeRole"                                                                                                                                                  
+                        }                                                                                                                                                                               
+                    ]                                                                                                                                                                                   
+                }                                                                                                                                                                                       
+            }                                                                                                                                                                                           
+        ],                                                                                                                                                                                              
+        "Tags": []                                                                                                                                                                                      
+    }                                                                                                                                                                                                   
+}
+
+
+PARTE 7: COMPROBAR LAS REGLAS DE IAM
+
+Paso 20: Intenta borrar el rol con aws iam delete-role y lee el error.
+
+PS D:\Juan-Canas-D\Escritorio\AWS-Cloud\RIWI-AWS\04-ROLES-IAM\practica-roles> aws iam delete-role --role-name ec2-lector-s3
+
+aws: [ERROR]: An error occurred (DeleteConflict) when calling the DeleteRole operation: Cannot delete entity, must remove roles from instance profile first.
