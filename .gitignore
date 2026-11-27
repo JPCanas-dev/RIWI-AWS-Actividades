@@ -1,0 +1,14 @@
+# Claves y credenciales de AWS
+*.csv
+*credentials*
+.aws/
+*.env
+*.env.*
+*.pem
+*.key
+*.id_rsa
+llaves-secretos-otros.txt
+
+# Archivos de sistema operativo
+Thumbs.db
+.DS_Store
